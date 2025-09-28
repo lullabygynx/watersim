@@ -35,6 +35,64 @@ func (g *Game) Draw() {
 	}
 }
 
+func (g *Game) Update() {
+	// Create a new state to avoid modifying a current sate while reading it
+
+	newState := CreateGameState(len(g.State[0]), len(g.State), g.tileSize)
+
+	// Copy current state to new state
+	for y := range g.State {
+		copy(newState[y], g.State[y])
+	}
+
+	// Process the simulation from the bottom updwards
+
+	for y := len(g.State) - 1; y >= 0; y-- {
+		for x := range g.State[y] {
+
+			//Only process cells that contain water
+			if g.State[y][x].volume > 0 {
+
+				// Check if we are at the bottom boundary
+
+				if y+1 < len(g.State) {
+					processWaterCell(x, y, &newState)
+				}
+			}
+		}
+	}
+
+	// Replace old state with new calculated state
+
+	g.State = newState
+}
+
+func processWaterCell(x, y int, newState *[][]Droplet) {
+	// Try to flow downwards, as if by gravity
+	fill(&(*newState)[y][x], &(*newState)[y+1][x], 1.0, 0.5)
+}
+
+// Calculate how much more water a droplet can hold
+func remainder(droplet Droplet, maxVolume float64) float64 {
+	return maxVolume - droplet.volume
+}
+
+// Fill transfers water between two droplets atr a controlled rate
+func fill(current, target *Droplet, maxVolume, flowRate float64) {
+	// Calculate how much water can  be transferred
+
+	transfer := remainder(*target, maxVolume)
+
+	// Limit tranfer to the flow rate (prevents teleportation)
+	if transfer > flowRate {
+		transfer = flowRate
+	}
+
+	//Move water from source to target
+	current.volume -= transfer
+	target.volume += transfer
+}
+
 func NewGame(width, height, tileSize int) *Game {
 	// Create a new Game
 	g := &Game{Width: width, Height: height, tileSize: tileSize}
@@ -91,6 +149,10 @@ func main() {
 
 		// Draw the game state
 		game.Draw()
+
+		// Update the game state based on the rules
+
+		game.Update()
 
 		rl.EndDrawing()
 	}
