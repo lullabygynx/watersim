@@ -14,15 +14,27 @@ type Droplet struct {
 	size   int
 }
 
-func (d *Droplet) Draw(x, y, tileSize int) {
+func (d *Droplet) Draw(x, y, tileSize int, hasWaterAbove bool) {
 	// Convert grid coordniates to pixel coordnitates
 	pixelX := x * tileSize
 	pixelY := y * tileSize
 
 	if d.volume > 0 {
-		// Draw the blue water rectangle
+		// Calculate visual height based on water volume
+		// Full volume (1.0) = full tile height, half volume (0.5) = half  height
 
-		rl.DrawRectangle(int32(pixelX), int32(pixelY), int32(tileSize), int32(tileSize), rl.Blue)
+		height := int(float64(tileSize) * d.volume)
+
+		// Fill up from bottom
+
+		offsetY := tileSize - height
+
+		if hasWaterAbove {
+			offsetY = 0
+		}
+
+		// Draw the blue water rectangle
+		rl.DrawRectangle(int32(pixelX), int32(pixelY+offsetY), int32(tileSize), int32(tileSize), rl.Blue)
 	}
 }
 
@@ -30,7 +42,11 @@ func (g *Game) Draw() {
 	// Loop throuch each cell and call the cells Draw() method
 	for y := range g.State {
 		for x := 0; x < len(g.State[y]); x++ {
-			g.State[y][x].Draw(x, y, g.tileSize)
+
+			// Check if there is water above this cell
+			hasWaterAbove := y > 0 && g.State[y-1][x].volume > 0
+
+			g.State[y][x].Draw(x, y, g.tileSize, hasWaterAbove)
 		}
 	}
 }
