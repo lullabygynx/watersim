@@ -141,6 +141,11 @@ func CreateGameState(newWidth, newHeight, tileSize int) [][]Droplet {
 	return newState
 }
 
+func CreateWaterGenerator(x, y, tileSize int, state *[][]Droplet) {
+	droplet := Droplet{size: tileSize, volume: 1.0}
+	(*state)[y][x] = droplet
+}
+
 func main() {
 	// Setup the new game
 	var game = NewGame(800, 400, 10)
@@ -148,20 +153,28 @@ func main() {
 	// Initialize Raylib gfx window
 	rl.InitWindow(int32(game.Width), int32(game.Height), "Water Sim in Golang")
 
-	// Create a single water droplet and add it to the screen
-
-	droplet := Droplet{size: game.tileSize, volume: 1.0}
-
-	game.State[100/game.tileSize][400/game.tileSize] = droplet
+	// Setup a counter, so we can spawn a new water a rate
+	frameCount := 0
+	flowStartX := 100 / game.tileSize
+	flowStartY := 100 / game.tileSize
+	CreateWaterGenerator(flowStartX, flowStartY, game.tileSize, &game.State)
 
 	// Set the frame per second rate
 	rl.SetTargetFPS(20)
 
 	// Main loop
 	for !rl.WindowShouldClose() {
+		frameCount++
+
 		// Begin to draw and set the background to black
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.Black)
+		// Add new water every 5 frames (creates  continous water stream)
+		if frameCount%5 == 0 {
+			CreateWaterGenerator(flowStartX, flowStartY, game.tileSize, &game.State)
+			CreateWaterGenerator(flowStartX+1, flowStartY, game.tileSize, &game.State)
+			CreateWaterGenerator(flowStartX-1, flowStartY, game.tileSize, &game.State)
+		}
 
 		// Draw the game state
 		game.Draw()
