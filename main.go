@@ -101,6 +101,10 @@ func processWaterCell(x, y int, newState *[][]Droplet) {
 
 	// Water spreads sideways when blocked below
 	tryHorizontalFlow(x, y, newState)
+
+	if (*newState)[y][x].volume > 0 {
+		tryDiagonalFlow(x, y, newState)
+	}
 }
 
 func canFlowDown(x, y int, state *[][]Droplet) bool {
@@ -134,6 +138,20 @@ func tryHorizontalFlow(x, y int, state *[][]Droplet) {
 			flowRate := (current.volume - target.volume) * 0.1 / float64(offset)
 			fill(current, target, 1.0, flowRate)
 		}
+	}
+}
+
+func tryDiagonalFlow(x, y int, state *[][]Droplet) {
+	current := &(*state)[y][x]
+
+	// Flow diagonally down-right if space is available
+	if x+1 < len((*state)[y]) && y+1 < len(*state) && (*state)[y+1][x+1].volume < 1.0 {
+		fill(current, &(*state)[y+1][x+1], 1.0, 0.25)
+	}
+
+	// Flow diagonally down-left if space is available
+	if x > 0 && y+1 < len(*state) && (*state)[y+1][x-1].volume < 1.0 {
+		fill(current, &(*state)[y+1][x-1], 1.0, 0.25)
 	}
 }
 
